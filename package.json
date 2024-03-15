@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "@google-cloud/vertexai": "^0.5.0",
+    "dotenv": "^16.4.5",
+    "megalodon": "^10.0.0",
+    "typescript": "^5.4.2"
+  },
+  "name": "my-fedi-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "20.8.2",
+    "gts": "^5.2.0",
+    "typescript": "~5.2.0"
+  },
+  "scripts": {
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "build": "tsc",
+    "fix": "gts fix",
+    "prepare": "yarn run compile",
+    "pretest": "yarn run compile",
+    "posttest": "yarn run lint",
+    "start": "node build/index.js"
+  }
+}
