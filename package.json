@@ -2,6 +2,7 @@
   "dependencies": {
     "@google-cloud/vertexai": "^0.5.0",
     "dotenv": "^16.4.5",
+    "lokijs": "^1.5.12",
     "megalodon": "^10.0.0",
     "typescript": "^5.4.2"
   },
@@ -11,6 +12,7 @@
   "license": "MIT",
   "type": "module",
   "devDependencies": {
+    "@types/lokijs": "^1.5.14",
     "@types/node": "20.8.2",
     "gts": "^5.2.0",
     "typescript": "~5.2.0"
@@ -19,6 +21,7 @@
     "lint": "gts lint",
     "clean": "gts clean",
     "build": "tsc",
+    "compile": "tsc",
     "fix": "gts fix",
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",

@@ -1,4 +1,5 @@
 build
 node_modules
 config.json
+test.db.json
 private

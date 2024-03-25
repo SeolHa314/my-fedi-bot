@@ -9,6 +9,7 @@ type BotConfig = {
     projectLocation: string;
     authFile: string;
   };
+  dbPath: string;
 };
 
 // eslint-disable-next-line node/no-unpublished-import
