@@ -29,31 +29,69 @@ export default class FediHelperBot {
     this.run();
   }
 
+  private sanitizeStatus(content: string): string {
+    return content.replace(/^@\w+/, '').trim();
+  }
+
   private async handleUpdate(status: Entity.Status) {
+    // Ignore updates from itself
+    if (status.account.id === this.botID) {
+      return;
+    }
     // Check if the bot is mentioned in the status update
     if (status.mentions.map(val => val.id).includes(this.botID)) {
       if (
         // Check if the status update starts with the bot's username and only mentions the bot
-        status.plain_content?.startsWith('@' + this.botAccount.username) &&
+        // status.plain_content?.startsWith('@' + this.botAccount.username) &&
+        status.plain_content &&
         status.mentions.length === 1
       ) {
-        // Create a regular expression to match the bot's username at the beginning of the status update
-        const firstMentionRegex = /^@\w+/;
-        // Extract the prompt from the status update by removing the bot's username
-        const prompt = status.plain_content.replace(firstMentionRegex, '');
-        // Generate an AI response to the prompt
-        const response = await this.aiService.genAIResponse(prompt);
-        try {
-          // Post the AI response as a status update on the bot's account
-          this.client.postStatus(response, {
-            // Set the in_reply_to_id to the ID of the original status update
-            in_reply_to_id: status.id,
-            // Set the visibility of the status update to the same as the original status update
-            visibility: status.visibility,
-          });
-        } catch (e: unknown) {
-          // Log any errors that occur while posting the status update
-          console.log('Error' + e);
+        if (status.in_reply_to_id) {
+          if (!this.contextDB.existsChatContext(status.in_reply_to_id)) {
+            // If there is no context for this chat, then we can't reply to it
+            return;
+          } else {
+            try {
+              const aiResponse = await this.aiService.genAIResponseFromChatId(
+                this.sanitizeStatus(status.plain_content),
+                status.in_reply_to_id
+              );
+              const respPost = await this.client.postStatus(aiResponse, {
+                in_reply_to_id: status.id,
+                visibility: status.visibility,
+              });
+              this.contextDB.extendChatContent(
+                status.in_reply_to_id,
+                respPost.data.id,
+                this.sanitizeStatus(status.plain_content),
+                aiResponse
+              );
+            } catch (e: unknown) {
+              console.log('Error' + e);
+            }
+          }
+        } else {
+          try {
+            const aiResponse = await this.aiService.genAIResponse(
+              this.sanitizeStatus(status.plain_content)
+            );
+            // Post the AI response as a status update on the bot's account
+            const postResp = await this.client.postStatus(aiResponse, {
+              // Set the in_reply_to_id to the ID of the original status update
+              in_reply_to_id: status.id,
+              // Set the visibility of the status update to the same as the original status update
+              visibility: status.visibility,
+            });
+            this.contextDB.newChatContext(
+              postResp.data.id,
+              status.account.id,
+              this.sanitizeStatus(status.plain_content),
+              aiResponse
+            );
+          } catch (e: unknown) {
+            // Log any errors that occur while posting the status update
+            console.log('Error' + e);
+          }
         }
       }
     }

@@ -20,33 +20,28 @@ export type ChatContext = {
 export default class ContextDatabase {
   db: loki;
 
-  private permittedUsers: loki.Collection<PermittedUser>;
+  private permittedUsers!: loki.Collection<PermittedUser>;
 
-  private chatContexts: loki.Collection<ChatContext>;
+  private chatContexts!: loki.Collection<ChatContext>;
 
   constructor(dbPath: string) {
-    // const dbPath = path.join(
-    //   process.cwd(),
-    //   botConfig.dbPath || 'context-database.json'
-    // );
     this.db = new loki(dbPath, {
       autoload: true,
       autosave: true,
       autosaveInterval: 1000,
       autoloadCallback: err => {
+        this.permittedUsers = this.getCollection('permittedUsers', {
+          indices: ['userId'],
+        });
+
+        this.chatContexts = this.getCollection('chatContexts', {
+          indices: ['lastChatId'],
+        });
         if (err) {
           console.error('Error loading database ', err);
           exit(1);
         }
       },
-    });
-
-    this.permittedUsers = this.getCollection('permittedUsers', {
-      indices: ['userId'],
-    });
-
-    this.chatContexts = this.getCollection('chatContexts', {
-      indices: ['lastChatId'],
     });
   }
 
@@ -94,6 +89,7 @@ export default class ContextDatabase {
 
   public extendChatContent(
     lastChatId: string,
+    newLastChatId: string,
     userPrompt: string,
     aiResponse: string
   ) {
@@ -104,7 +100,7 @@ export default class ContextDatabase {
     if (!context) {
       throw new Error('No chat context found');
     } else {
-      context.lastChatId = lastChatId;
+      context.lastChatId = newLastChatId;
       context.chats.push(
         {
           role: 'user',
@@ -116,14 +112,21 @@ export default class ContextDatabase {
         }
       );
       this.chatContexts.update(context);
-      return lastChatId;
+      return newLastChatId;
     }
+  }
+
+  public existsChatContext(lastChatId: string) {
+    return !!this.chatContexts.findOne({
+      lastChatId: lastChatId,
+    });
   }
 
   public getAllChatContext(lastChatId: string) {
     const context = this.chatContexts.findOne({
       lastChatId: lastChatId,
     });
+
     const resp: {role: string; parts: {text: string}[]}[] = [];
 
     if (!context) {
