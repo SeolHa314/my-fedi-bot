@@ -1,5 +1,5 @@
 //import generator, {Entity} from 'megalodon';
-import {Entity, MegalodonInterface} from 'megalodon';
+import {Entity, MegalodonInterface, NotificationType} from 'megalodon';
 import AIService from './ai.js';
 import BotConfig from './config.js';
 import path from 'path';
@@ -10,6 +10,7 @@ export default class FediHelperBot {
   private client: MegalodonInterface;
   private contextDB: ContextDatabase;
   private aiService: AIService;
+  private instanceHostname: string;
 
   // We are certain that these two properties are set in function run()
   // and that they are not null
@@ -26,14 +27,18 @@ export default class FediHelperBot {
     this.contextDB = new ContextDatabase(dbPath);
     this.aiService = new AIService(this.contextDB);
 
+    this.instanceHostname = new URL(BotConfig.instanceUrl).hostname;
     this.run();
   }
 
   private sanitizeStatus(content: string): string {
-    return content.replace(/^@\w+/, '').trim();
+    return content
+      .replace(/^@\w+/, '')
+      .replace(new RegExp(`^@\\w+@${this.instanceHostname}`), '')
+      .trim();
   }
 
-  private async handleUpdate(status: Entity.Status) {
+  private async handleMention(status: Entity.Status) {
     // Ignore updates from itself
     if (status.account.id === this.botID) {
       return;
@@ -44,7 +49,8 @@ export default class FediHelperBot {
         // Check if the status update starts with the bot's username and only mentions the bot
         // status.plain_content?.startsWith('@' + this.botAccount.username) &&
         status.plain_content &&
-        status.mentions.length === 1
+        status.mentions.length === 1 &&
+        this.contextDB.isPermittedUser(status.account.id)
       ) {
         if (status.in_reply_to_id) {
           if (!this.contextDB.existsChatContext(status.in_reply_to_id)) {
@@ -108,13 +114,15 @@ export default class FediHelperBot {
         console.log(`bot id: ${this.botID}`);
       });
 
-      stream.on('update', async (status: Entity.Status) =>
-        this.handleUpdate(status)
-      );
+      // stream.on('update', async (status: Entity.Status) =>
+      //   this.handleUpdate(status)
+      // );
 
-      // stream.on('notification', (noti: Entity.Notification) => {
-      //   console.log(noti);
-      // });
+      stream.on('notification', (noti: Entity.Notification) => {
+        if (noti.type === NotificationType.Mention && noti.status) {
+          this.handleMention(noti.status);
+        }
+      });
 
       stream.on('heartbeat', () => {
         console.log('heartbeat');

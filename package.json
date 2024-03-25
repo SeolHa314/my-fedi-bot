@@ -6,6 +6,9 @@
     "megalodon": "^10.0.0",
     "typescript": "^5.4.2"
   },
+  "engines": {
+    "node": ">=18.19.0"
+  },
   "name": "my-fedi-bot",
   "version": "1.0.0",
   "main": "index.js",

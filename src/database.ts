@@ -1,7 +1,4 @@
 import loki from 'lokijs';
-// import botConfig from './config.js';
-// import path from 'path';
-import {exit} from 'process';
 
 export type PermittedUser = {
   userId: string;
@@ -37,9 +34,9 @@ export default class ContextDatabase {
         this.chatContexts = this.getCollection('chatContexts', {
           indices: ['lastChatId'],
         });
+
         if (err) {
-          console.error('Error loading database ', err);
-          exit(1);
+          throw new Error(err);
         }
       },
     });
@@ -62,6 +59,10 @@ export default class ContextDatabase {
         userId: userId,
       });
     }
+  }
+
+  public isPermittedUser(userId: string) {
+    return !!this.permittedUsers.findOne({userId: userId});
   }
 
   public newChatContext(
