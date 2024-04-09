@@ -6,6 +6,18 @@ import path from 'path';
 import ContextDatabase from './database.js';
 import {Account} from 'megalodon/lib/src/entities/account.js';
 
+type MentionHook = (
+  msg: Entity.Status
+) => Promise<void | ReturnType<MegalodonInterface['postStatus']>>;
+type EmojiReactionHook = (
+  emojiContext: Entity.Notification
+) => Promise<void | ReturnType<MegalodonInterface['createEmojiReaction']>>;
+
+export type InstallHookResult = {
+  mentionHook?: MentionHook;
+  emojiReactionHook?: EmojiReactionHook;
+};
+
 export default class FediHelperBot {
   private client: MegalodonInterface;
   private contextDB: ContextDatabase;
