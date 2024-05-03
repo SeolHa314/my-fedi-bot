@@ -4,8 +4,8 @@ import {
   //  HarmCategory,
   //  HarmBlockThreshold,
 } from '@google-cloud/vertexai';
-import BotConfig from './config.js';
-import ContextDatabase from './database.js';
+import BotConfig from './config';
+import ContextDatabase from './database';
 
 export default class AIService {
   private aiClient: VertexAI;
@@ -22,7 +22,8 @@ export default class AIService {
       },
     });
     this.geminiModel = this.aiClient.getGenerativeModel({
-      model: 'gemini-1.0-pro',
+      // model: 'gemini-1.0-pro',
+      model: 'gemini-1.5-pro-preview-0409',
     });
   }
 
@@ -33,7 +34,10 @@ export default class AIService {
 
     const result = await this.geminiModel.generateContent(prompt);
     const response = await result.response;
-    return response.candidates[0].content.parts[0].text!;
+    if (response.candidates !== undefined) {
+      return response.candidates[0].content.parts[0].text!;
+    }
+    return '';
   }
 
   public async genAIResponseFromChatId(input: string, lastChatId: string) {
@@ -42,6 +46,9 @@ export default class AIService {
       contents: [...prompts, {role: 'user', parts: [{text: input}]}],
     });
     const response = await result.response;
-    return response.candidates[0].content.parts[0].text!;
+    if (response.candidates !== undefined) {
+      return response.candidates[0].content.parts[0].text!;
+    }
+    return '';
   }
 }

@@ -1,12 +1,15 @@
-import FediHelperBot, {InstallHookResult} from './bot.js';
+import {MegalodonInterface} from 'megalodon';
+import {InstallHookResult} from './bot';
+import autoBind from 'auto-bind';
 
 export default abstract class Module {
   public abstract readonly name: string;
 
-  protected botClient: FediHelperBot;
+  protected botClient: MegalodonInterface;
 
-  constructor(bot: FediHelperBot) {
+  constructor(bot: MegalodonInterface) {
     this.botClient = bot;
+    autoBind(this);
   }
 
   public abstract installHook(): InstallHookResult;

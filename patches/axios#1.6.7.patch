@@ -1,0 +1,30 @@
+Index: /axios/dist/node/axios.cjs
+===================================================================
+--- /axios/dist/node/axios.cjs
++++ /axios/dist/node/axios.cjs
+@@ -2873,9 +2873,9 @@
+     }
+ 
+     headers.set(
+       'Accept-Encoding',
+-      'gzip, compress, deflate' + (isBrotliSupported ? ', br' : ''), false
++      'gzip, compress, deflate', false
+       );
+ 
+     const options = {
+       path,
+Index: /axios/lib/adapters/http.js
+===================================================================
+--- /axios/lib/adapters/http.js
++++ /axios/lib/adapters/http.js
+@@ -34,9 +34,9 @@
+   flush: zlib.constants.BROTLI_OPERATION_FLUSH,
+   finishFlush: zlib.constants.BROTLI_OPERATION_FLUSH
+ }
+ 
+-const isBrotliSupported = utils.isFunction(zlib.createBrotliDecompress);
++const isBrotliSupported = false;
+ 
+ const {http: httpFollow, https: httpsFollow} = followRedirects;
+ 
+ const isHttps = /https:?/;
