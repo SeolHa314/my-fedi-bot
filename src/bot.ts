@@ -34,7 +34,8 @@ export default class FediHelperBot {
   }
 
   public async installModules(modules: Module[]) {
-    for (const module of modules) {
+    this.modules = modules;
+    for (const module of this.modules) {
       const hooks = module.installHook();
       if (hooks) {
         this.hooks.push(hooks);

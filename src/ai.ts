@@ -1,5 +1,7 @@
 import {
   GenerativeModel,
+  HarmBlockThreshold,
+  HarmCategory,
   VertexAI,
   //  HarmCategory,
   //  HarmBlockThreshold,
@@ -24,6 +26,13 @@ export default class AIService {
     this.geminiModel = this.aiClient.getGenerativeModel({
       // model: 'gemini-1.0-pro',
       model: 'gemini-1.5-pro-preview-0409',
+      generationConfig: {
+        temperature: 1.25,
+      },
+      safetySettings: Object.values(HarmCategory).map(category => ({
+        category: category,
+        threshold: HarmBlockThreshold.BLOCK_NONE,
+      })),
     });
   }
 
@@ -33,7 +42,7 @@ export default class AIService {
     };
 
     const result = await this.geminiModel.generateContent(prompt);
-    const response = await result.response;
+    const response = result.response;
     if (response.candidates !== undefined) {
       return response.candidates[0].content.parts[0].text!;
     }
@@ -45,7 +54,7 @@ export default class AIService {
     const result = await this.geminiModel.generateContent({
       contents: [...prompts, {role: 'user', parts: [{text: input}]}],
     });
-    const response = await result.response;
+    const response = result.response;
     if (response.candidates !== undefined) {
       return response.candidates[0].content.parts[0].text!;
     }
