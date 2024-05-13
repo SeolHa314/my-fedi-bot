@@ -1,5 +1,6 @@
-import {expect, test, describe, beforeEach} from 'bun:test';
+import {expect, test, describe, beforeEach, afterEach} from 'bun:test';
 import ContextDatabase from 'database';
+import {unlink, exists} from 'node:fs/promises';
 
 describe('ContextDatabase', () => {
   let db: ContextDatabase;
@@ -8,6 +9,13 @@ describe('ContextDatabase', () => {
   beforeEach(async () => {
     db = new ContextDatabase(dbPath);
     await new Promise(t => setTimeout(t, 50)); // Wait for the database to load
+  });
+
+  afterEach(async () => {
+    db.db.close();
+    if (await exists(dbPath)) {
+      await unlink(dbPath);
+    }
   });
 
   test('addPermittedUser', () => {

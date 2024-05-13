@@ -3,8 +3,6 @@ import {
   HarmBlockThreshold,
   HarmCategory,
   VertexAI,
-  //  HarmCategory,
-  //  HarmBlockThreshold,
 } from '@google-cloud/vertexai';
 import BotConfig from './config';
 import ContextDatabase from './database';
@@ -24,7 +22,6 @@ export default class AIService {
       },
     });
     this.geminiModel = this.aiClient.getGenerativeModel({
-      // model: 'gemini-1.0-pro',
       model: 'gemini-1.5-pro-preview-0409',
       generationConfig: {
         temperature: 1.25,
