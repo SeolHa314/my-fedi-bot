@@ -3,18 +3,7 @@ import {Entity, MegalodonInterface, NotificationType} from 'megalodon';
 import BotConfig from './config';
 import {Account} from 'megalodon/lib/src/entities/account';
 import Module from './module';
-
-type MentionHook = (
-  msg: Entity.Status
-) => Promise<void | ReturnType<MegalodonInterface['postStatus']>>;
-type EmojiReactionHook = (
-  emojiContext: Entity.Notification
-) => Promise<void | ReturnType<MegalodonInterface['createEmojiReaction']>>;
-
-export type InstallHookResult = {
-  mentionHook?: MentionHook;
-  emojiReactionHook?: EmojiReactionHook;
-};
+import {InstallHookResult} from './types';
 
 export default class FediHelperBot {
   private client: MegalodonInterface;

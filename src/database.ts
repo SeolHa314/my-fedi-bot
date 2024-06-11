@@ -1,18 +1,5 @@
 import loki from 'lokijs';
-
-export type PermittedUser = {
-  userId: string;
-};
-
-export type ChatContext = {
-  lastChatId: string;
-  chattingUsers: string[];
-  chats: {
-    role: string;
-    // postId: string;
-    chatContent: string;
-  }[];
-};
+import {PermittedUser, ChatContext} from './types';
 
 export default class ContextDatabase {
   db: loki;
@@ -69,22 +56,41 @@ export default class ContextDatabase {
     lastChatId: string,
     chatUserId: string,
     userPrompt: string,
-    aiResponse: string
+    aiResponse: string,
+    chatImageUrls?: string[]
   ) {
-    this.chatContexts.insert({
-      lastChatId: lastChatId,
-      chattingUsers: [chatUserId],
-      chats: [
-        {
-          role: 'user',
-          chatContent: userPrompt,
-        },
-        {
-          role: 'model',
-          chatContent: aiResponse,
-        },
-      ],
-    });
+    if (chatImageUrls) {
+      this.chatContexts.insert({
+        lastChatId: lastChatId,
+        chattingUsers: [chatUserId],
+        chats: [
+          {
+            role: 'user',
+            chatContent: userPrompt,
+            chatImageUrls: chatImageUrls,
+          },
+          {
+            role: 'model',
+            chatContent: aiResponse,
+          },
+        ],
+      });
+    } else {
+      this.chatContexts.insert({
+        lastChatId: lastChatId,
+        chattingUsers: [chatUserId],
+        chats: [
+          {
+            role: 'user',
+            chatContent: userPrompt,
+          },
+          {
+            role: 'model',
+            chatContent: aiResponse,
+          },
+        ],
+      });
+    }
     return lastChatId;
   }
 
@@ -92,7 +98,8 @@ export default class ContextDatabase {
     lastChatId: string,
     newLastChatId: string,
     userPrompt: string,
-    aiResponse: string
+    aiResponse: string,
+    chatImageUrls?: string[]
   ) {
     const context = this.chatContexts.findOne({
       lastChatId: lastChatId,
@@ -102,16 +109,30 @@ export default class ContextDatabase {
       throw new Error('No chat context found');
     } else {
       context.lastChatId = newLastChatId;
-      context.chats.push(
-        {
-          role: 'user',
-          chatContent: userPrompt,
-        },
-        {
-          role: 'model',
-          chatContent: aiResponse,
-        }
-      );
+      if (chatImageUrls) {
+        context.chats.push(
+          {
+            role: 'user',
+            chatContent: userPrompt,
+            chatImageUrls: chatImageUrls,
+          },
+          {
+            role: 'model',
+            chatContent: aiResponse,
+          }
+        );
+      } else {
+        context.chats.push(
+          {
+            role: 'user',
+            chatContent: userPrompt,
+          },
+          {
+            role: 'model',
+            chatContent: aiResponse,
+          }
+        );
+      }
       this.chatContexts.update(context);
       return newLastChatId;
     }
@@ -128,25 +149,10 @@ export default class ContextDatabase {
       lastChatId: lastChatId,
     });
 
-    const resp: {role: string; parts: {text: string}[]}[] = [];
-
     if (!context) {
       throw new Error('No chat context found');
     } else {
-      //   return context.chats.forEach(chat => {
-      //     return {role: chat.role, parts: [{text: chat.chatContent}]};
-      //   });
-      context.chats.forEach(chat => {
-        resp.push({
-          role: chat.role,
-          parts: [
-            {
-              text: chat.chatContent,
-            },
-          ],
-        });
-      });
-      return resp;
+      return context.chats;
     }
   }
 }

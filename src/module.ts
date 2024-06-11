@@ -1,5 +1,5 @@
 import {MegalodonInterface} from 'megalodon';
-import {InstallHookResult} from './bot';
+import {InstallHookResult} from './types';
 import autoBind from 'auto-bind';
 
 export default abstract class Module {

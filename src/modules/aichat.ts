@@ -4,7 +4,7 @@ import AIService from '../ai';
 import BotConfig from '../config';
 import path from 'path';
 import ContextDatabase from '../database';
-import {InstallHookResult} from '../bot';
+import {InstallHookResult} from '../types';
 import autoBind from 'auto-bind';
 
 export default class AichatModule extends Module {
@@ -62,9 +62,13 @@ export default class AichatModule extends Module {
             return;
           } else {
             try {
+              const imageUrls: string[] = status.media_attachments
+                .filter(media => media.type === 'image')
+                .map(media => media.url);
               const aiResponse = await this.aiService.genAIResponseFromChatId(
+                status.in_reply_to_id,
                 this.sanitizeStatus(status.plain_content),
-                status.in_reply_to_id
+                imageUrls
               );
               const respPost = await this.bot.postStatus(aiResponse, {
                 in_reply_to_id: status.id,
@@ -74,7 +78,8 @@ export default class AichatModule extends Module {
                 status.in_reply_to_id,
                 respPost.data.id,
                 this.sanitizeStatus(status.plain_content),
-                aiResponse
+                aiResponse,
+                imageUrls
               );
             } catch (e: unknown) {
               console.log('Error' + e);
@@ -82,8 +87,12 @@ export default class AichatModule extends Module {
           }
         } else {
           try {
+            const imageUrls: string[] = status.media_attachments
+              .filter(media => media.type === 'image')
+              .map(media => media.url);
             const aiResponse = await this.aiService.genAIResponse(
-              this.sanitizeStatus(status.plain_content)
+              this.sanitizeStatus(status.plain_content),
+              imageUrls
             );
             this.log('response: ' + aiResponse);
             // Post the AI response as a status update on the bot's account
@@ -97,7 +106,8 @@ export default class AichatModule extends Module {
               postResp.data.id,
               status.account.id,
               this.sanitizeStatus(status.plain_content),
-              aiResponse
+              aiResponse,
+              imageUrls
             );
           } catch (e: unknown) {
             // Log any errors that occur while posting the status update
