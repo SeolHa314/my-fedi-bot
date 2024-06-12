@@ -1,16 +1,5 @@
 import path from 'path';
-
-type BotConfig = {
-  instanceUrl: string;
-  instanceToken: string;
-  botID: string;
-  vertexAI: {
-    projectName: string;
-    projectLocation: string;
-    authFile: string;
-  };
-  dbPath: string;
-};
+import {BotConfig} from 'types';
 
 // eslint-disable-next-line node/no-unpublished-import
 import botConfig from '../config.json' assert {type: 'json'};

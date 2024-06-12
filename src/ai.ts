@@ -7,11 +7,13 @@ import {
 import BotConfig from './config';
 import ContextDatabase from './database';
 import {PromptType} from 'types';
+import {MediaCache} from 'mediacache';
 
 export default class AIService {
   private aiClient: VertexAI;
   private geminiModel: GenerativeModel;
   private contextDB: ContextDatabase;
+  private mediaCache: MediaCache;
 
   constructor(contextDatabase: ContextDatabase) {
     this.contextDB = contextDatabase;
@@ -32,6 +34,7 @@ export default class AIService {
         threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
       })),
     });
+    this.mediaCache = new MediaCache();
   }
 
   public async genAIResponse(input: string, imageUrls?: string[]) {
@@ -39,19 +42,23 @@ export default class AIService {
       contents: [{role: 'user', parts: []}],
     };
     if (imageUrls) {
-      const images = await Promise.all(
-        imageUrls.map(async url => this.getBase64Image(url))
+      const imagePrompt = await Promise.all(
+        imageUrls.map(async url => {
+          const imageCache = await this.mediaCache.getMediaFromCache(url);
+          if (imageCache !== null) {
+            return {inlineData: imageCache};
+          } else {
+            const image = await this.getBase64Image(url);
+            await this.mediaCache.setMediaToCache(url, image);
+            return {
+              inlineData: image,
+            };
+          }
+        })
       );
-      const imagePrompt = images.map(image => {
-        console.log('image MIME type:', image.mimeType);
-        return {
-          inlineData: {data: image.imageBase64, mimeType: image.mimeType},
-        };
-      });
       prompt.contents[0].parts.push(...imagePrompt);
     }
     prompt.contents[0].parts.push({text: input});
-
     const result = await this.geminiModel.generateContent(prompt);
     const response = result.response;
     if (response.candidates !== undefined) {
@@ -77,17 +84,23 @@ export default class AIService {
       ].map(async chat => {
         if (chat.chatImageUrls) {
           const images = await Promise.all(
-            chat.chatImageUrls.map(url => this.getBase64Image(url))
+            chat.chatImageUrls.map(async url => {
+              const imageCache = await this.mediaCache.getMediaFromCache(url);
+              if (imageCache !== null) {
+                return {inlineData: imageCache};
+              } else {
+                const image = await this.getBase64Image(url);
+                await this.mediaCache.setMediaToCache(url, image);
+                return {
+                  inlineData: image,
+                };
+              }
+            })
           );
 
           return {
             role: chat.role,
-            parts: [
-              ...images.map(image => ({
-                inlineData: {data: image.imageBase64, mimeType: image.mimeType},
-              })),
-              {text: chat.chatContent},
-            ],
+            parts: [...images, {text: chat.chatContent}],
           };
         } else {
           return {
@@ -97,28 +110,7 @@ export default class AIService {
         }
       })
     );
-    // for (const chat of promptsQueryResult) {
-    //   if (chat.chatImageUrls) {
-    //     const images = await Promise.all(
-    //       chat.chatImageUrls.map(url => this.getBase64Image(url))
-    //     );
 
-    //     prompts.push({
-    //       role: chat.role,
-    //       parts: [
-    //         ...images.map(image => ({
-    //           inlineData: {data: image.imageBase64, mimeType: image.mimeType},
-    //         })),
-    //         {text: chat.chatContent},
-    //       ],
-    //     });
-    //   } else {
-    //     prompts.push({
-    //       role: chat.role,
-    //       parts: [{text: chat.chatContent}],
-    //     });
-    //   }
-    // }
     const result = await this.geminiModel.generateContent({
       contents: prompts,
     });
@@ -129,14 +121,16 @@ export default class AIService {
     return '';
   }
 
-  private async getBase64Image(imageUrl: string) {
+  private async getBase64Image(
+    imageUrl: string
+  ): Promise<{data: string; mimeType: string}> {
     try {
       const imageWeb = await fetch(imageUrl);
       const imageBlob = await imageWeb.blob();
       const imageBuffer = await imageBlob.arrayBuffer();
       const imageBase64 = Buffer.from(imageBuffer).toString('base64');
       return {
-        imageBase64: imageBase64,
+        data: imageBase64,
         mimeType: imageWeb.headers.get('Content-Type')!,
       };
     } catch (e) {

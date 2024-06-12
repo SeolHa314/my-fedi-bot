@@ -4,3 +4,4 @@ config.json
 test.db.json
 private
 .vscode/
+.env

@@ -30,6 +30,13 @@ export type ChatContext = {
 };
 
 // src/ai.ts
+export type MediaInlineDataType = {
+  inlineData: {
+    data: string;
+    mimeType: string;
+  };
+};
+
 export type PromptType = {
   contents: {
     role: 'user' | 'model';
@@ -37,12 +44,7 @@ export type PromptType = {
       | {
           text: string;
         }
-      | {
-          inlineData: {
-            data: string;
-            mimeType: string;
-          };
-        }
+      | MediaInlineDataType
     )[];
   }[];
 };
