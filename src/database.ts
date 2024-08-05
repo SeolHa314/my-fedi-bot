@@ -1,5 +1,5 @@
 import loki from 'lokijs';
-import {PermittedUser, ChatContext} from './types';
+import {PermittedUser, ChatContext} from './types.js';
 
 export default class ContextDatabase {
   db: loki;

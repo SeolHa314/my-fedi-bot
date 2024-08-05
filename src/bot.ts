@@ -1,22 +1,23 @@
-//import generator, {Entity} from 'megalodon';
-import {Entity, MegalodonInterface, NotificationType} from 'megalodon';
-import BotConfig from './config';
-import {Account} from 'megalodon/lib/src/entities/account';
-import Module from './module';
-import {InstallHookResult} from './types';
+import BotConfig from './config.js';
+import Module from './module.js';
+import {InstallHookResult} from './types.js';
+import * as Misskey from 'misskey-js';
+import {Connection} from 'misskey-js/streaming.js';
+import ws from 'ws';
 
 export default class FediHelperBot {
-  private client: MegalodonInterface;
+  private client: Misskey.api.APIClient;
   private modules: Module[];
 
   // We are certain that these two properties are set in function run()
   // and that they are not null
-  private botAccount!: Account;
+  private botAccount!: Misskey.Endpoints['i']['res'];
   private botID!: string;
+  private streamChannel!: Connection<Misskey.Channels['main']>;
 
   private hooks: InstallHookResult[];
 
-  constructor(client: MegalodonInterface) {
+  constructor(client: Misskey.api.APIClient) {
     this.client = client;
     this.modules = [];
     this.hooks = [];
@@ -33,37 +34,61 @@ export default class FediHelperBot {
   }
 
   public async run() {
-    this.botAccount = (await this.client.getAccount(BotConfig.botID)).data;
+    this.botAccount = await this.client.request('i', {});
     this.botID = this.botAccount.id;
+    this.streamChannel = new Misskey.Stream(
+      BotConfig.instanceUrl,
+      {
+        token: this.client.credential!,
+      },
+      {
+        WebSocket: ws,
+      }
+    ).useChannel('main');
 
-    this.client.userStreaming().then(stream => {
-      // Listen for the 'connect' event and log a message when the stream is connected
-      stream.on('connect', () => {
-        console.log('connect');
-        console.log(`bot id: ${this.botID}`);
-      });
+    this.streamChannel.on('signin', payload => {
+      console.log('signin');
+      console.log(`bot id: ${payload.id}`);
+    });
 
-      // stream.on('update', async (status: Entity.Status) =>
-      //   this.handleUpdate(status)
-      // );
-
-      stream.on('notification', (noti: Entity.Notification) => {
-        if (noti.type === NotificationType.Mention && noti.status) {
-          for (const hook of this.hooks) {
-            if (hook.mentionHook) {
-              hook.mentionHook(noti.status);
-            }
+    this.streamChannel.on('mention', payload => {
+      if (payload.text) {
+        for (const hook of this.hooks) {
+          if (hook.mentionHook) {
+            hook.mentionHook(payload);
           }
         }
-      });
-
-      stream.on('heartbeat', () => {
-        console.log('heartbeat');
-      });
-
-      stream.on('close', () => {
-        console.log('close');
-      });
+      }
     });
+
+    // this.client.userStreaming().then(stream => {
+    //   // Listen for the 'connect' event and log a message when the stream is connected
+    //   stream.on('connect', () => {
+    //     console.log('connect');
+    //     console.log(`bot id: ${this.botID}`);
+    //   });
+
+    //   // stream.on('update', async (status: Entity.Status) =>
+    //   //   this.handleUpdate(status)
+    //   // );
+
+    //   stream.on('notification', (noti: Entity.Notification) => {
+    //     if (noti.type === NotificationType.Mention && noti.status) {
+    //       for (const hook of this.hooks) {
+    //         if (hook.mentionHook) {
+    //           hook.mentionHook(noti.status);
+    //         }
+    //       }
+    //     }
+    //   });
+
+    //   stream.on('heartbeat', () => {
+    //     console.log('heartbeat');
+    //   });
+
+    //   stream.on('close', () => {
+    //     console.log('close');
+    //   });
+    // });
   }
 }

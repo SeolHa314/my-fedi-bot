@@ -1,17 +1,19 @@
 {
   "compilerOptions": {
     // Enable latest features
-    "lib": ["ESNext", "DOM"],
-    "target": "ESNext",
-    "module": "ESNext",
+    "lib": ["ES2020", "DOM"],
+    "target": "ES2020",
+    "module": "NodeNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
 
     // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
+    "moduleResolution": "NodeNext",
+    // "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    // "noEmit": true,
+    "outDir": "./build",
 
     // Best practices
     "strict": true,
@@ -24,5 +26,12 @@
     "noPropertyAccessFromIndexSignature": false,
 
     "baseUrl": "./src",
-  }
+    "resolveJsonModule": true
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
+    "verbose": false
+  },
+  "include": ["src/**/*"],
+  "exclude": ["./test", "./node_modules", "./build"]
 }

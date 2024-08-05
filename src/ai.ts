@@ -4,10 +4,11 @@ import {
   HarmCategory,
   VertexAI,
 } from '@google-cloud/vertexai';
-import BotConfig from './config';
-import ContextDatabase from './database';
-import {PromptType} from 'types';
-import {MediaCache} from 'mediacache';
+import sharp from 'sharp';
+import BotConfig from './config.js';
+import ContextDatabase from './database.js';
+import {PromptType} from './types.js';
+import {MediaCache} from './mediacache.js';
 
 export default class AIService {
   private aiClient: VertexAI;
@@ -28,6 +29,7 @@ export default class AIService {
       model: 'gemini-1.5-flash-001',
       generationConfig: {
         temperature: 0.1,
+        maxOutputTokens: 2000,
       },
       safetySettings: Object.values(HarmCategory).map(category => ({
         category: category,
@@ -128,13 +130,29 @@ export default class AIService {
       const imageWeb = await fetch(imageUrl);
       const imageBlob = await imageWeb.blob();
       const imageBuffer = await imageBlob.arrayBuffer();
-      const imageBase64 = Buffer.from(imageBuffer).toString('base64');
-      return {
-        data: imageBase64,
-        mimeType: imageWeb.headers.get('Content-Type')!,
-      };
+      if (!imageWeb.headers.get('Content-Type')!.startsWith('image/jpeg')) {
+        const jpegImageBuffer = await this.convertToJpeg(
+          Buffer.from(imageBuffer)
+        );
+        const imageBase64 = Buffer.from(jpegImageBuffer).toString('base64');
+        return {
+          data: imageBase64,
+          mimeType: 'image/jpeg',
+        };
+      } else {
+        const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+        return {
+          data: imageBase64,
+          mimeType: imageWeb.headers.get('Content-Type')!,
+        };
+      }
     } catch (e) {
-      throw new Error('Error fetching image');
+      throw new Error(e as string);
     }
+  }
+
+  private async convertToJpeg(imageBuffer: Buffer) {
+    const image = sharp(imageBuffer);
+    return image.jpeg().toBuffer();
   }
 }

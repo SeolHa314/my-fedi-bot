@@ -1,5 +1,5 @@
 import {createClient} from 'redis';
-import {MediaInlineDataType} from './types';
+import {MediaInlineDataType} from './types.js';
 
 export class MediaCache {
   private client;

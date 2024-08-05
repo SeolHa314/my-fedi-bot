@@ -1,7 +1,10 @@
 build
 node_modules
 config.json
+config.old.json
 test.db.json
 private
 .vscode/
 .env
+data/
+context-database.json

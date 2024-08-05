@@ -1,12 +1,12 @@
-import {Entity, MegalodonInterface} from 'megalodon';
+import {Endpoints} from 'misskey-js/autogen/endpoint.js';
+import {Note, Notification} from 'misskey-js/entities.js';
 
 // src/bot.ts
 type MentionHook = (
-  msg: Entity.Status
-) => Promise<void | ReturnType<MegalodonInterface['postStatus']>>;
-type EmojiReactionHook = (
-  emojiContext: Entity.Notification
-) => Promise<void | ReturnType<MegalodonInterface['createEmojiReaction']>>;
+  msg: Note
+) => Promise<void | Endpoints['notes/create']['res']>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EmojiReactionHook = (emojiContext: Notification) => Promise<void | any>;
 
 export type InstallHookResult = {
   mentionHook?: MentionHook;

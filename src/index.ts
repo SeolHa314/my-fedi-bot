@@ -1,13 +1,16 @@
-import generator from 'megalodon';
-import FediHelperBot from './bot';
+import * as Misskey from 'misskey-js';
+import FediHelperBot from './bot.js';
 
-import BotConfig from './config';
-import AichatModule from './modules/aichat';
+import BotConfig from './config.js';
+import AichatModule from './modules/aichat.js';
 
 const BASE_URL = BotConfig.instanceUrl;
 const access_token = BotConfig.instanceToken;
 
-const client = generator('pleroma', BASE_URL, access_token);
+const client = new Misskey.api.APIClient({
+  origin: BASE_URL,
+  credential: access_token,
+});
 
 const bot = new FediHelperBot(client);
 bot.installModules([new AichatModule(client)]);

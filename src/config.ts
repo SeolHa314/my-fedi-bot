@@ -1,5 +1,5 @@
 import path from 'path';
-import {BotConfig} from 'types';
+import {BotConfig} from 'types.js';
 
 // eslint-disable-next-line node/no-unpublished-import
 import botConfig from '../config.json' assert {type: 'json'};
