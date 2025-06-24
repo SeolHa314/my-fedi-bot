@@ -25,9 +25,19 @@ export default class AIService {
       },
     });
     this.geminiModel = this.aiClient.getGenerativeModel({
-      model: 'gemini-1.5-flash-001',
+      model: 'gemini-2.5-flash',
+      systemInstruction: {
+        role: 'system',
+        parts: [
+          {
+            text: 'You would help users with their queries. You can also respond to images. You should be polite and helpful.',
+          },
+        ],
+      },
       generationConfig: {
-        temperature: 0.1,
+        temperature: 1,
+        maxOutputTokens: 2048,
+        candidateCount: 1,
       },
       safetySettings: Object.values(HarmCategory).map(category => ({
         category: category,

@@ -17,14 +17,9 @@ export class MediaCache {
   public async getMediaFromCache(
     key: string
   ): Promise<MediaInlineDataType['inlineData'] | null> {
-    return new Promise((resolve, reject) => {
-      this.client
-        .hGetAll(this.namespace + key)
-        .then(value => {
-          if (Object.keys(value).length === 0) resolve(null);
-          else resolve(value as MediaInlineDataType['inlineData']);
-        })
-        .catch(reject);
+    return this.client.hGetAll(this.namespace + key).then(value => {
+      if (Object.keys(value).length === 0) return null;
+      else return value as MediaInlineDataType['inlineData'];
     });
   }
 
@@ -32,14 +27,10 @@ export class MediaCache {
     key: string,
     value: MediaInlineDataType['inlineData']
   ) {
-    return new Promise((resolve, reject) => {
-      this.client
-        .multi()
-        .hSet(this.namespace + key, value)
-        .expire(this.namespace + key, 60 * 60)
-        .exec()
-        .then(resolve)
-        .catch(reject);
-    });
+    return this.client
+      .multi()
+      .hSet(this.namespace + key, value)
+      .expire(this.namespace + key, 60 * 60)
+      .exec();
   }
 }

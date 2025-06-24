@@ -5,3 +5,5 @@ test.db.json
 private
 .vscode/
 .env
+data/
+.DS_Store

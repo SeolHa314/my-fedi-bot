@@ -56,19 +56,22 @@ export default class AichatModule extends Module {
         status.mentions.length === 1 &&
         this.contextDB.isPermittedUser(status.account.id)
       ) {
+        const imageUrls: string[] = status.media_attachments
+          .filter(media => media.type === 'image')
+          .map(media => media.url);
         if (status.in_reply_to_id) {
-          if (!this.contextDB.existsChatContext(status.in_reply_to_id)) {
-            // If there is no context for this chat, then we can't reply to it
-            return;
-          } else {
+          if (this.contextDB.existsChatContext(status.in_reply_to_id)) {
             try {
-              const imageUrls: string[] = status.media_attachments
-                .filter(media => media.type === 'image')
-                .map(media => media.url);
               const aiResponse = await this.aiService.genAIResponseFromChatId(
                 status.in_reply_to_id,
                 this.sanitizeStatus(status.plain_content),
                 imageUrls
+              );
+              this.log(
+                'note id: ' +
+                  status.in_reply_to_id +
+                  '\nresponse: ' +
+                  aiResponse
               );
               const respPost = await this.bot.postStatus(aiResponse, {
                 in_reply_to_id: status.id,
@@ -87,9 +90,6 @@ export default class AichatModule extends Module {
           }
         } else {
           try {
-            const imageUrls: string[] = status.media_attachments
-              .filter(media => media.type === 'image')
-              .map(media => media.url);
             const aiResponse = await this.aiService.genAIResponse(
               this.sanitizeStatus(status.plain_content),
               imageUrls
