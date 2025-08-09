@@ -1,11 +1,12 @@
 import path from 'path';
-import {BotConfig} from 'types';
+import {BotConfig} from './types';
 
-// eslint-disable-next-line node/no-unpublished-import
-import botConfig from '../config.json' assert {type: 'json'};
-botConfig.vertexAI.authFile = path.join(
-  process.cwd(),
-  botConfig.vertexAI.authFile
-);
+import configData from '../config.json' assert {type: 'json'};
 
-export default botConfig as BotConfig;
+function loadConfig(): BotConfig {
+  const config = configData as BotConfig;
+  config.vertexAI.authFile = path.join(process.cwd(), config.vertexAI.authFile);
+  return config;
+}
+
+export default loadConfig();

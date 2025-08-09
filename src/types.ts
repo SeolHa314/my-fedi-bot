@@ -1,4 +1,5 @@
 import {Entity, MegalodonInterface} from 'megalodon';
+import {Content, Part} from '@google/generative-ai';
 
 // src/bot.ts
 type MentionHook = (
@@ -21,32 +22,18 @@ export type PermittedUser = {
 export type ChatContext = {
   lastChatId: string;
   chattingUsers: string[];
-  chats: {
-    role: 'user' | 'model';
-    // postId: string;
-    chatContent: string;
-    chatImageUrls?: string[];
-  }[];
+  chats: Content[];
+  mediaUrls: string[];
 };
 
 // src/ai.ts
+export type Chat = Content;
+export type PromptType = Part[];
 export type MediaInlineDataType = {
   inlineData: {
     data: string;
     mimeType: string;
   };
-};
-
-export type PromptType = {
-  contents: {
-    role: 'user' | 'model';
-    parts: (
-      | {
-          text: string;
-        }
-      | MediaInlineDataType
-    )[];
-  }[];
 };
 
 // src/config.ts
@@ -58,6 +45,7 @@ export type BotConfig = {
     projectName: string;
     projectLocation: string;
     authFile: string;
+    apiKey: string;
   };
   dbPath: string;
 };

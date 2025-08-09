@@ -5,6 +5,7 @@
     "vertexAI": {
       "projectName": "gen-lang-client",
       "projectLocation": "some-location1",
-      "authFile": "./private/vertexAI_authfile.json"
+      "authFile": "",
+    "apiKey": ""
     }
 }

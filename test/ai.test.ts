@@ -44,4 +44,14 @@ describe('AIService', () => {
     expect(newAiResponse).toBeDefined();
     expect(typeof newAiResponse).toBe('string');
   });
+
+  it('should generate AI response from an image', async () => {
+    const input = 'What is this logo?';
+    const imageUrl = [
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Wikipedia-logo-v2.svg/1200px-Wikipedia-logo-v2.svg.png',
+    ];
+    const response = await aiService.genAIResponse(input, imageUrl);
+    expect(response).toBeDefined();
+    expect(typeof response).toBe('string');
+  });
 });

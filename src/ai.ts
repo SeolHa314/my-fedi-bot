@@ -1,80 +1,25 @@
-import {
-  GenerativeModel,
-  HarmBlockThreshold,
-  HarmCategory,
-  VertexAI,
-} from '@google-cloud/vertexai';
+import {GoogleGenerativeAI, Content} from '@google/generative-ai';
 import BotConfig from './config';
 import ContextDatabase from './database';
-import {PromptType} from 'types';
-import {MediaCache} from 'mediacache';
+import {Chat, PromptType, MediaInlineDataType} from './types';
+import {MediaCache} from './mediacache';
 
 export default class AIService {
-  private aiClient: VertexAI;
-  private geminiModel: GenerativeModel;
+  private aiClient: GoogleGenerativeAI;
   private contextDB: ContextDatabase;
   private mediaCache: MediaCache;
 
   constructor(contextDatabase: ContextDatabase) {
     this.contextDB = contextDatabase;
-    this.aiClient = new VertexAI({
-      project: BotConfig.vertexAI.projectName,
-      location: BotConfig.vertexAI.projectLocation,
-      googleAuthOptions: {
-        keyFile: BotConfig.vertexAI.authFile,
-      },
-    });
-    this.geminiModel = this.aiClient.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      systemInstruction: {
-        role: 'system',
-        parts: [
-          {
-            text: 'You would help users with their queries. You can also respond to images. You should be polite and helpful.',
-          },
-        ],
-      },
-      generationConfig: {
-        temperature: 1,
-        maxOutputTokens: 2048,
-        candidateCount: 1,
-      },
-      safetySettings: Object.values(HarmCategory).map(category => ({
-        category: category,
-        threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
-      })),
-    });
+    this.aiClient = new GoogleGenerativeAI(BotConfig.vertexAI.apiKey);
     this.mediaCache = new MediaCache();
   }
 
   public async genAIResponse(input: string, imageUrls?: string[]) {
-    const prompt: PromptType = {
-      contents: [{role: 'user', parts: []}],
-    };
-    if (imageUrls) {
-      const imagePrompt = await Promise.all(
-        imageUrls.map(async url => {
-          const imageCache = await this.mediaCache.getMediaFromCache(url);
-          if (imageCache !== null) {
-            return {inlineData: imageCache};
-          } else {
-            const image = await this.getBase64Image(url);
-            await this.mediaCache.setMediaToCache(url, image);
-            return {
-              inlineData: image,
-            };
-          }
-        })
-      );
-      prompt.contents[0].parts.push(...imagePrompt);
-    }
-    prompt.contents[0].parts.push({text: input});
-    const result = await this.geminiModel.generateContent(prompt);
-    const response = result.response;
-    if (response.candidates !== undefined) {
-      return response.candidates[0].content.parts[0].text!;
-    }
-    return '';
+    const model = this.aiClient.getGenerativeModel({model: 'gemini-2.5-flash'});
+    const prompt = await this.buildSinglePrompt(input, imageUrls);
+    const result = await model.generateContent(prompt);
+    return result.response.text();
   }
 
   public async genAIResponseFromChatId(
@@ -83,68 +28,90 @@ export default class AIService {
     imageUrls?: string[]
   ) {
     const promptsQueryResult = this.contextDB.getAllChatContext(lastChatId);
-    const prompts: PromptType['contents'] = await Promise.all(
-      [
-        ...promptsQueryResult,
-        {
-          role: 'user' as 'user' | 'model',
-          chatContent: input,
-          chatImageUrls: imageUrls,
-        },
-      ].map(async chat => {
-        if (chat.chatImageUrls) {
-          const images = await Promise.all(
-            chat.chatImageUrls.map(async url => {
-              const imageCache = await this.mediaCache.getMediaFromCache(url);
-              if (imageCache !== null) {
-                return {inlineData: imageCache};
-              } else {
-                const image = await this.getBase64Image(url);
-                await this.mediaCache.setMediaToCache(url, image);
-                return {
-                  inlineData: image,
-                };
-              }
-            })
-          );
+    const contextImageUrls = this.contextDB.getMediaUrlsFromContext(lastChatId);
+    const newChat: Chat = {
+      role: 'user',
+      parts: [{text: input}],
+    };
 
-          return {
-            role: chat.role,
-            parts: [...images, {text: chat.chatContent}],
-          };
+    if (imageUrls) {
+      newChat.parts.push(...(await this.getImageParts(imageUrls)));
+    } else if (contextImageUrls.length > 0) {
+      newChat.parts.push(...(await this.getImageParts(contextImageUrls)));
+    }
+
+    const history = await this.buildPromptsFromChats(promptsQueryResult);
+    const model = this.aiClient.getGenerativeModel({model: 'gemini-2.5-flash'});
+    const chat = model.startChat({history});
+    const result = await chat.sendMessage(newChat.parts);
+
+    return result.response.text();
+  }
+
+  private async buildSinglePrompt(
+    input: string,
+    imageUrls?: string[]
+  ): Promise<PromptType> {
+    const prompt: PromptType = [{text: input}];
+    if (imageUrls) {
+      prompt.push(...(await this.getImageParts(imageUrls)));
+    }
+    return prompt;
+  }
+
+  private async buildPromptsFromChats(chats: Chat[]): Promise<Content[]> {
+    return Promise.all(chats.map(chat => this.buildPartFromChat(chat)));
+  }
+
+  private async buildPartFromChat(chat: Chat): Promise<Content> {
+    return {
+      role: chat.role,
+      parts: chat.parts,
+    };
+  }
+
+  private async getImageParts(
+    imageUrls: string[]
+  ): Promise<MediaInlineDataType[]> {
+    return Promise.all(
+      imageUrls.map(async url => {
+        const imageCache = await this.mediaCache.getMediaFromCache(url);
+        if (imageCache !== null) {
+          return {inlineData: imageCache};
         } else {
+          const image = await this.getBase64Image(url);
+          await this.mediaCache.setMediaToCache(url, image);
           return {
-            role: chat.role,
-            parts: [{text: chat.chatContent}],
+            inlineData: image,
           };
         }
       })
     );
-
-    const result = await this.geminiModel.generateContent({
-      contents: prompts,
-    });
-    const response = result.response;
-    if (response.candidates !== undefined) {
-      return response.candidates[0].content.parts[0].text!;
-    }
-    return '';
   }
 
   private async getBase64Image(
     imageUrl: string
-  ): Promise<{data: string; mimeType: string}> {
+  ): Promise<MediaInlineDataType['inlineData']> {
     try {
       const imageWeb = await fetch(imageUrl);
+      if (!imageWeb.ok) {
+        throw new Error(`Error fetching image: ${imageWeb.statusText}`);
+      }
       const imageBlob = await imageWeb.blob();
-      const imageBuffer = await imageBlob.arrayBuffer();
-      const imageBase64 = Buffer.from(imageBuffer).toString('base64');
+      const imageBase64 = Buffer.from(await imageBlob.arrayBuffer()).toString(
+        'base64'
+      );
       return {
         data: imageBase64,
-        mimeType: imageWeb.headers.get('Content-Type')!,
+        mimeType:
+          imageWeb.headers.get('Content-Type') || 'application/octet-stream',
       };
     } catch (e) {
-      throw new Error('Error fetching image');
+      if (e instanceof Error) {
+        throw new Error(`Error fetching image: ${e.message}`);
+      } else {
+        throw new Error('An unknown error occurred while fetching the image.');
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 import loki from 'lokijs';
-import {PermittedUser, ChatContext} from './types';
+import {PermittedUser, ChatContext, Chat} from './types';
 
 export default class ContextDatabase {
   db: loki;
@@ -59,38 +59,22 @@ export default class ContextDatabase {
     aiResponse: string,
     chatImageUrls?: string[]
   ) {
-    if (chatImageUrls) {
-      this.chatContexts.insert({
-        lastChatId: lastChatId,
-        chattingUsers: [chatUserId],
-        chats: [
-          {
-            role: 'user',
-            chatContent: userPrompt,
-            chatImageUrls: chatImageUrls,
-          },
-          {
-            role: 'model',
-            chatContent: aiResponse,
-          },
-        ],
-      });
-    } else {
-      this.chatContexts.insert({
-        lastChatId: lastChatId,
-        chattingUsers: [chatUserId],
-        chats: [
-          {
-            role: 'user',
-            chatContent: userPrompt,
-          },
-          {
-            role: 'model',
-            chatContent: aiResponse,
-          },
-        ],
-      });
-    }
+    this.chatContexts.insert({
+      lastChatId: lastChatId,
+      chattingUsers: [chatUserId],
+      chats: [
+        {
+          role: 'user',
+          parts: [{text: userPrompt}],
+        },
+        {
+          role: 'model',
+          parts: [{text: aiResponse}],
+        },
+      ],
+      mediaUrls: chatImageUrls || [],
+    });
+
     return lastChatId;
   }
 
@@ -109,30 +93,17 @@ export default class ContextDatabase {
       throw new Error('No chat context found');
     } else {
       context.lastChatId = newLastChatId;
-      if (chatImageUrls) {
-        context.chats.push(
-          {
-            role: 'user',
-            chatContent: userPrompt,
-            chatImageUrls: chatImageUrls,
-          },
-          {
-            role: 'model',
-            chatContent: aiResponse,
-          }
-        );
-      } else {
-        context.chats.push(
-          {
-            role: 'user',
-            chatContent: userPrompt,
-          },
-          {
-            role: 'model',
-            chatContent: aiResponse,
-          }
-        );
+      const userChat: Chat = {
+        role: 'user',
+        parts: [{text: userPrompt}],
+      };
+      if (chatImageUrls && chatImageUrls.length > 0) {
+        context.mediaUrls.push(...chatImageUrls);
       }
+      context.chats.push(userChat, {
+        role: 'model',
+        parts: [{text: aiResponse}],
+      });
       this.chatContexts.update(context);
       return newLastChatId;
     }
@@ -153,6 +124,18 @@ export default class ContextDatabase {
       throw new Error('No chat context found');
     } else {
       return context.chats;
+    }
+  }
+
+  public getMediaUrlsFromContext(lastChatId: string) {
+    const context = this.chatContexts.findOne({
+      lastChatId: lastChatId,
+    });
+
+    if (!context) {
+      throw new Error('No chat context found');
+    } else {
+      return context.mediaUrls || [];
     }
   }
 }

@@ -1,4 +1,3 @@
-//import generator, {Entity} from 'megalodon';
 import {Entity, MegalodonInterface, NotificationType} from 'megalodon';
 import BotConfig from './config';
 import {Account} from 'megalodon/lib/src/entities/account';
@@ -22,7 +21,7 @@ export default class FediHelperBot {
     this.hooks = [];
   }
 
-  public async installModules(modules: Module[]) {
+  public installModules(modules: Module[]) {
     this.modules = modules;
     for (const module of this.modules) {
       const hooks = module.installHook();
@@ -37,33 +36,33 @@ export default class FediHelperBot {
     this.botID = this.botAccount.id;
 
     this.client.userStreaming().then(stream => {
-      // Listen for the 'connect' event and log a message when the stream is connected
-      stream.on('connect', () => {
-        console.log('connect');
-        console.log(`bot id: ${this.botID}`);
-      });
-
-      // stream.on('update', async (status: Entity.Status) =>
-      //   this.handleUpdate(status)
-      // );
-
-      stream.on('notification', (noti: Entity.Notification) => {
-        if (noti.type === NotificationType.Mention && noti.status) {
-          for (const hook of this.hooks) {
-            if (hook.mentionHook) {
-              hook.mentionHook(noti.status);
-            }
-          }
-        }
-      });
-
-      stream.on('heartbeat', () => {
-        console.log('heartbeat');
-      });
-
-      stream.on('close', () => {
-        console.log('close');
-      });
+      stream.on('connect', () => this.handleConnect());
+      stream.on('notification', noti => this.handleNotification(noti));
+      stream.on('heartbeat', () => this.handleHeartbeat());
+      stream.on('close', () => this.handleClose());
     });
+  }
+
+  private handleConnect() {
+    console.log('connect');
+    console.log(`bot id: ${this.botID}`);
+  }
+
+  private handleNotification(noti: Entity.Notification) {
+    if (noti.type === NotificationType.Mention && noti.status) {
+      for (const hook of this.hooks) {
+        if (hook.mentionHook) {
+          hook.mentionHook(noti.status);
+        }
+      }
+    }
+  }
+
+  private handleHeartbeat() {
+    console.log('heartbeat');
+  }
+
+  private handleClose() {
+    console.log('close');
   }
 }
