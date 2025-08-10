@@ -20,6 +20,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `bun test test/ai.test.ts` - Run AI service tests specifically
 - `bun test test/database.test.ts` - Run database tests specifically
 
+### Container Development
+- `docker build -t my-fedi-bot:latest .` - Build production container
+- `docker build -t my-fedi-bot:dev -f Dockerfile.dev .` - Build development container
+- `docker-compose -f docker-compose.dev.yml up` - Start development environment
+- `docker-compose -f docker-compose.prod.yml up -d` - Start production environment
+- `docker-compose -f docker-compose.prod.yml logs -f` - View production logs
+
 ## Architecture Overview
 
 This is a federated social media bot built for Pleroma/Mastodon instances using the megalodon library. The architecture follows a modular design pattern with clear separation of concerns.
@@ -87,32 +94,45 @@ Tests use Bun's test runner with proper setup and teardown:
 - AI tests mock actual AI calls to avoid API costs during development
 - Tests ensure core functionality of database operations and AI response generation
 
+### Database Test Coverage
+
+The database test suite (`test/database.test.ts`) includes comprehensive coverage of all database operations:
+- **Core Operations**: `newChatContext`, `extendChatContent`, `getAllChatContext`
+- **User Management**: `addPermittedUser`, `isPermittedUser`, `removePermittedUser`
+- **Media URL Handling**: `getMediaUrlsFromContext` with various scenarios
+- **Error Handling**: Proper error throwing for non-existent contexts and duplicate operations
+- **Edge Cases**: Empty media URL arrays, duplicate user additions, and mixed media scenarios
+
+**Total Test Count**: 16 tests covering all major functionality and error conditions
+
 ### Current Development Status
 
-**Recent Updates (8c10195):**
-- Migrated from Google Vertex AI to Gemini AI API for simpler configuration
-- Added media URL caching in database context for conversation continuity
-- Improved user handling in `/add_user` command to extract user ID from mentions
-- Enhanced error handling in media cache operations
-- Added proper TypeScript type definitions for media handling
+**Recent Updates (0b0d035):**
+- Added comprehensive database test coverage with 16 total tests
+- Implemented complete Docker containerization using Bun runtime
+- Enhanced media URL functionality and error handling
+- Added production-ready container orchestration with Redis
+- Improved development workflow with hot-reloading containers
 
 **Key Improvements:**
-- Simplified AI configuration (API key instead of service account)
-- Better image caching strategy with fallback to database context
-- More robust user permission management
-- Improved error handling and logging throughout the application
+- **Enhanced Testing**: Added 10 new database tests covering media URL operations, error handling, and edge cases
+- **Containerization**: Complete Docker support with multi-stage builds using `oven/bun:1-alpine` base image
+- **Deployment**: Production and development docker-compose configurations with health checks
+- **Performance**: Optimized container images with non-root user execution and security best practices
+- **Developer Experience**: Hot-reloading development containers with volume mounting
+- **Documentation**: Comprehensive deployment guide with troubleshooting and scaling options
 
 ## Container Deployment
 
 The application includes comprehensive Docker containerization support with multiple deployment options:
 
 ### Container Files
-- **`Dockerfile`** - Production-optimized multi-stage build
-- **`Dockerfile.dev`** - Development container with hot-reloading
-- **`docker-compose.prod.yml`** - Production orchestration with Redis
-- **`docker-compose.dev.yml`** - Development environment
-- **`.dockerignore`** - Build optimization
-- **`CONTAINER_DEPLOYMENT.md`** - Complete deployment guide
+- **`Dockerfile`** - Production-optimized multi-stage build using Bun runtime
+- **`Dockerfile.dev`** - Development container with hot-reloading and Bun
+- **`docker-compose.prod.yml`** - Production orchestration with Redis and health checks
+- **`docker-compose.dev.yml`** - Development environment with volume mounting
+- **`.dockerignore`** - Build optimization excluding unnecessary files
+- **`CONTAINER_DEPLOYMENT.md`** - Complete deployment guide with troubleshooting
 
 ### Quick Start with Docker
 ```bash
@@ -124,13 +144,15 @@ docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Container Features
+- **Bun Runtime**: Uses `oven/bun:1-alpine` base image for optimal performance
 - Multi-stage builds for optimized image size
-- Non-root user execution for security
-- Redis/Valkey service for media caching
-- Health checks for monitoring
+- Non-root user execution for security (UID 1001)
+- Redis/Valkey service for media caching with health checks
 - Volume persistence for database and logs
-- Environment variable configuration
-- Development and production profiles
+- Environment variable configuration for secrets and settings
+- Development hot-reloading with volume mounting
+- Production health checks and monitoring
+- Security best practices with read-only configuration mounts
 
 ### Deployment Options
 - **Production**: Optimized containers with Redis caching
