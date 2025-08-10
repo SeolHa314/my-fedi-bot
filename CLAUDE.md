@@ -101,3 +101,41 @@ Tests use Bun's test runner with proper setup and teardown:
 - Better image caching strategy with fallback to database context
 - More robust user permission management
 - Improved error handling and logging throughout the application
+
+## Container Deployment
+
+The application includes comprehensive Docker containerization support with multiple deployment options:
+
+### Container Files
+- **`Dockerfile`** - Production-optimized multi-stage build
+- **`Dockerfile.dev`** - Development container with hot-reloading
+- **`docker-compose.prod.yml`** - Production orchestration with Redis
+- **`docker-compose.dev.yml`** - Development environment
+- **`.dockerignore`** - Build optimization
+- **`CONTAINER_DEPLOYMENT.md`** - Complete deployment guide
+
+### Quick Start with Docker
+```bash
+# Development
+docker-compose -f docker-compose.dev.yml up
+
+# Production
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Container Features
+- Multi-stage builds for optimized image size
+- Non-root user execution for security
+- Redis/Valkey service for media caching
+- Health checks for monitoring
+- Volume persistence for database and logs
+- Environment variable configuration
+- Development and production profiles
+
+### Deployment Options
+- **Production**: Optimized containers with Redis caching
+- **Development**: Hot-reloading with volume mounting
+- **Standalone**: Single container deployment
+- **Scaled**: Multiple bot instances with shared Redis
+
+For complete deployment instructions, see `CONTAINER_DEPLOYMENT.md`.

@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Redis/Valkey service for media caching
+  redis:
+    image: valkey/valkey:7.2.5-alpine
+    container_name: fedi-bot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      - VALKEY_PASSWORD=${REDIS_PASSWORD:-}
+    command: >
+      valkey-server --requirepass ${REDIS_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - fedi-bot-network
+
+  # Main federated bot application
+  fedi-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: fedi-bot-app
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - bot_data:/app/data
+      - ./config.json:/app/config.json:ro
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/context-database.json
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "bun", "-e", "console.log('Bot health check')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - fedi-bot-network
+    # If you need to expose any ports (for monitoring, etc.)
+    # ports:
+    #   - "3000:3000"
+
+volumes:
+  redis_data:
+    driver: local
+  bot_data:
+    driver: local
+
+networks:
+  fedi-bot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # Redis/Valkey service for media caching (development)
+  redis:
+    image: valkey/valkey:7.2.5-alpine
+    container_name: fedi-bot-redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    environment:
+      - VALKEY_PASSWORD=${REDIS_PASSWORD:-devpass}
+    command: >
+      valkey-server --requirepass ${REDIS_PASSWORD:-devpass}
+    networks:
+      - fedi-bot-dev-network
+
+  # Main federated bot application (development)
+  fedi-bot:
+    build: 
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: fedi-bot-app-dev
+    restart: unless-stopped
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - bot_data:/app/data
+    environment:
+      - NODE_ENV=development
+      - DB_PATH=/app/data/context-database.json
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-devpass}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    env_file:
+      - .env
+    networks:
+      - fedi-bot-dev-network
+    # For development, you might want to access the container for debugging
+    stdin_open: true
+    tty: true
+
+volumes:
+  redis_data:
+    driver: local
+  bot_data:
+    driver: local
+
+networks:
+  fedi-bot-dev-network:
+    driver: bridge

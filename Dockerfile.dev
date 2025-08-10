@@ -1,0 +1,36 @@
+# Development Dockerfile optimized for hot-reloading and debugging
+FROM oven/bun:1-alpine
+
+# Install development tools
+RUN apk add --no-cache git
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 bun && \
+    adduser --system --uid 1001 bun
+
+# Copy package files
+COPY package.json bun.lockb* ./
+
+# Install all dependencies including dev dependencies
+RUN bun install
+
+# Copy source code
+COPY --chown=bun:bun . .
+
+# Create data directory
+RUN mkdir -p /app/data && \
+    chown bun:bun /app/data
+
+# Switch to non-root user
+USER bun
+
+# Expose port for development (if needed)
+EXPOSE 3000
+
+# Set environment variables
+ENV NODE_ENV=development
+
+# Default command - can be overridden for development
+CMD ["bun", "src/index.ts"]

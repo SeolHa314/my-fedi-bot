@@ -7,3 +7,5 @@ private
 .env
 data/
 .DS_Store
+
+.serena/
