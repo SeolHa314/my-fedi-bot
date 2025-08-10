@@ -25,7 +25,7 @@ export default class AIService {
   public async genAIResponseFromChatId(
     lastChatId: string,
     input: string,
-    imageUrls?: string[]
+    imageUrls?: string[],
   ) {
     const promptsQueryResult = this.contextDB.getAllChatContext(lastChatId);
     const contextImageUrls = this.contextDB.getMediaUrlsFromContext(lastChatId);
@@ -50,7 +50,7 @@ export default class AIService {
 
   private async buildSinglePrompt(
     input: string,
-    imageUrls?: string[]
+    imageUrls?: string[],
   ): Promise<PromptType> {
     const prompt: PromptType = [{text: input}];
     if (imageUrls) {
@@ -71,7 +71,7 @@ export default class AIService {
   }
 
   private async getImageParts(
-    imageUrls: string[]
+    imageUrls: string[],
   ): Promise<MediaInlineDataType[]> {
     return Promise.all(
       imageUrls.map(async url => {
@@ -85,12 +85,12 @@ export default class AIService {
             inlineData: image,
           };
         }
-      })
+      }),
     );
   }
 
   private async getBase64Image(
-    imageUrl: string
+    imageUrl: string,
   ): Promise<MediaInlineDataType['inlineData']> {
     try {
       const imageWeb = await fetch(imageUrl);
@@ -99,7 +99,7 @@ export default class AIService {
       }
       const imageBlob = await imageWeb.blob();
       const imageBase64 = Buffer.from(await imageBlob.arrayBuffer()).toString(
-        'base64'
+        'base64',
       );
       return {
         data: imageBase64,

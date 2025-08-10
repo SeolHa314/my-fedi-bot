@@ -35,7 +35,7 @@ export default class FediHelperBot {
     this.botAccount = (await this.client.getAccount(BotConfig.botID)).data;
     this.botID = this.botAccount.id;
 
-    this.client.userStreaming().then(stream => {
+    void this.client.userStreaming().then(stream => {
       stream.on('connect', () => this.handleConnect());
       stream.on('notification', noti => this.handleNotification(noti));
       stream.on('heartbeat', () => this.handleHeartbeat());
@@ -52,7 +52,7 @@ export default class FediHelperBot {
     if (noti.type === NotificationType.Mention && noti.status) {
       for (const hook of this.hooks) {
         if (hook.mentionHook) {
-          hook.mentionHook(noti.status);
+          void hook.mentionHook(noti.status);
         }
       }
     }

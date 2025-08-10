@@ -3,10 +3,10 @@ import {Content, Part} from '@google/generative-ai';
 
 // src/bot.ts
 type MentionHook = (
-  msg: Entity.Status
+  msg: Entity.Status,
 ) => Promise<void | ReturnType<MegalodonInterface['postStatus']>>;
 type EmojiReactionHook = (
-  emojiContext: Entity.Notification
+  emojiContext: Entity.Notification,
 ) => Promise<void | ReturnType<MegalodonInterface['createEmojiReaction']>>;
 
 export type InstallHookResult = {

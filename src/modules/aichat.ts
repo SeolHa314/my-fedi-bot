@@ -16,7 +16,7 @@ export default class AichatModule extends Module {
   public constructor(
     bot: MegalodonInterface,
     contextDB: ContextDatabase,
-    aiService: AIService
+    aiService: AIService,
   ) {
     super(bot);
     this.bot = bot;
@@ -102,7 +102,7 @@ export default class AichatModule extends Module {
 
   private async executeAIInteraction(
     interaction: () => Promise<void>,
-    statusId: string
+    statusId: string,
   ) {
     try {
       await interaction();
@@ -114,12 +114,12 @@ export default class AichatModule extends Module {
   private async processReply(
     status: Entity.Status,
     content: string,
-    imageUrls: string[]
+    imageUrls: string[],
   ) {
     const aiResponse = await this.aiService.genAIResponseFromChatId(
       status.in_reply_to_id!,
       content,
-      imageUrls
+      imageUrls,
     );
     this.log(`Reply to ${status.in_reply_to_id}: ${aiResponse}`);
     const respPost = await this.bot.postStatus(aiResponse, {
@@ -131,14 +131,14 @@ export default class AichatModule extends Module {
       respPost.data.id,
       content,
       aiResponse,
-      imageUrls
+      imageUrls,
     );
   }
 
   private async processNewConversation(
     status: Entity.Status,
     content: string,
-    imageUrls: string[]
+    imageUrls: string[],
   ) {
     const aiResponse = await this.aiService.genAIResponse(content, imageUrls);
     this.log(`New conversation response: ${aiResponse}`);
@@ -151,7 +151,7 @@ export default class AichatModule extends Module {
       status.account.id,
       content,
       aiResponse,
-      imageUrls
+      imageUrls,
     );
   }
 

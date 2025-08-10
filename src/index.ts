@@ -14,13 +14,13 @@ const client = generator('pleroma', BASE_URL, access_token);
 
 const dbPath = path.join(
   process.cwd(),
-  BotConfig.dbPath || 'context-database.json'
+  BotConfig.dbPath || 'context-database.json',
 );
 const contextDB = new ContextDatabase(dbPath);
 const aiService = new AIService(contextDB);
 
 const bot = new FediHelperBot(client);
 bot.installModules([new AichatModule(client, contextDB, aiService)]);
-(async function () {
-  bot.run();
+void (async function () {
+  await bot.run();
 })();

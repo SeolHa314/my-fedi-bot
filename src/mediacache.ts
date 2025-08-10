@@ -16,12 +16,12 @@ export class MediaCache {
 
     this.client.on('error', err => console.error('Redis Client Error', err));
 
-    this.client.connect();
+    void this.client.connect();
     this.namespace = `${namespace}:`;
   }
 
   public async getMediaFromCache(
-    key: string
+    key: string,
   ): Promise<MediaInlineDataType['inlineData'] | null> {
     try {
       const redisKey = this.namespace + key;
@@ -39,7 +39,7 @@ export class MediaCache {
 
   public async setMediaToCache(
     key: string,
-    value: MediaInlineDataType['inlineData']
+    value: MediaInlineDataType['inlineData'],
   ): Promise<void> {
     try {
       const redisKey = this.namespace + key;

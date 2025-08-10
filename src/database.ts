@@ -57,7 +57,7 @@ export default class ContextDatabase {
     chatUserId: string,
     userPrompt: string,
     aiResponse: string,
-    chatImageUrls?: string[]
+    chatImageUrls?: string[],
   ) {
     this.chatContexts.insert({
       lastChatId: lastChatId,
@@ -83,7 +83,7 @@ export default class ContextDatabase {
     newLastChatId: string,
     userPrompt: string,
     aiResponse: string,
-    chatImageUrls?: string[]
+    chatImageUrls?: string[],
   ) {
     const context = this.chatContexts.findOne({
       lastChatId: lastChatId,
