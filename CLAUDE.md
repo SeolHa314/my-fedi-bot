@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-### Build and Development
+### Package Management
+- **bun info [package] - Get package information (latest version, etc.)**
 - `bun install` - Install dependencies
 - `bun run start` - Start the bot using `bun src/index.ts`
 - `bun run build` or `bun run compile` - Compile TypeScript to JavaScript using `tsc`
